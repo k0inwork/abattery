@@ -21,6 +21,7 @@ public class BatteryService extends Service {
     private static final String CHANNEL_ID = "BatteryMonitorChannel";
     public static final String PREFS_NAME = "BatteryPrefs";
     public static final String KEY_RUNNING = "isServiceRunning";
+    public static final String KEY_THRESHOLD = "threshold";
 
     private int threshold = 20;
     private ToneGenerator toneGenerator;
@@ -57,15 +58,21 @@ public class BatteryService extends Service {
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         createNotificationChannel();
 
-        // Mark as running
+        // Load threshold from SharedPreferences
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        threshold = prefs.getInt(KEY_THRESHOLD, 20);
+
+        // Mark as running
         prefs.edit().putBoolean(KEY_RUNNING, true).apply();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null) {
+        if (intent != null && intent.hasExtra("threshold")) {
             threshold = intent.getIntExtra("threshold", 20);
+            // Save it for persistence across restarts
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            prefs.edit().putInt(KEY_THRESHOLD, threshold).apply();
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)

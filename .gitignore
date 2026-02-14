@@ -11,3 +11,7 @@ local.properties
 *.class
 bin/
 gen/
+captures/
+.externalNativeBuild
+.cxx
+EOF
