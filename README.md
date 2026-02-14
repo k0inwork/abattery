@@ -1,39 +1,43 @@
-# Battery Monitor Android App
+# Battery Monitor (Native Android)
 
-A simple Android application built with Python using the Kivy framework and Plyer library. It monitors the battery level and plays an alert sound when the percentage falls below a user-defined threshold.
+A lightweight, high-efficiency Android application to monitor battery levels and alert the user with a sound when the percentage drops below a specific threshold.
 
 ## Features
-- Real-time battery level monitoring.
-- Adjustable threshold slider (0-100%).
-- Audible alert when battery is low.
-- **Smart Alerts**: Does not alert if the device is currently charging.
-- Simple, clean user interface.
+- **Minimum Memory Footprint**: Built with Native Java and standard Android APIs (no heavy frameworks like Python or Flutter).
+- **Persistent Monitoring**: Uses a Foreground Service to ensure monitoring continues even when the app is in the background.
+- **Smart Alerts**: Automatically suppresses alerts when the device is charging.
+- **Self-Contained**: Generates alert tones programmatically (no audio assets required).
 
 ## Architecture
-- **Kivy**: Used for the cross-platform User Interface.
-- **Plyer**: Provides a platform-independent API to access Android's battery status.
-- **Buildozer**: Tool used to package the Python code into an Android APK.
+- **Language**: Java
+- **Target SDK**: 33 (Android 13)
+- **Monitoring**: `BroadcastReceiver` for `ACTION_BATTERY_CHANGED`.
+- **Alerts**: `android.media.ToneGenerator`.
 
-## Prerequisites
-To run locally:
-- Python 3
-- Kivy: `pip install kivy`
-- Plyer: `pip install plyer`
+## How to Get the APK
 
-To build for Android:
-- Buildozer (and its dependencies)
+To avoid the hassle of setting up a local Android build environment (SDK, NDK, Gradle), this project uses **GitHub Actions** to build the APK in the cloud.
 
-## Files
-- `main.py`: The main application code.
-- `generate_sound.py`: Utility to generate the `alert.wav` sound file.
-- `buildozer.spec`: Configuration for the Android build process.
-- `.gitignore`: Ensures build artifacts and temporary files are not tracked.
+### 1. Upload to GitHub
+Push this project to a GitHub repository.
 
-## Usage
-1. Generate the alert sound: `python generate_sound.py`
-2. Run the app: `python main.py`
-3. Set your desired threshold using the slider.
-4. Click "Start Monitoring".
+### 2. Automatic Build
+Every push to the `main` branch triggers a build. Go to the **Actions** tab in your GitHub repository to see the progress.
 
-## Known Limitations
-- **Background Execution**: On modern Android versions, the app may be paused or stopped by the system when in the background. For reliable long-term monitoring, an Android Service should be implemented (see Kivy/Buildozer documentation on Services).
+### 3. Download APK
+Once the build is complete:
+1. Click on the successful workflow run.
+2. Scroll down to the **Artifacts** section.
+3. Download the `battery-monitor-apk` zip file.
+4. Extract and install the `app-debug.apk` on your Android device.
+
+## Local Development
+If you prefer to build locally:
+1. Install [Android Studio](https://developer.android.com/studio).
+2. Open this project folder.
+3. Click "Build" -> "Build Bundle(s) / APK(s)" -> "Build APK(s)".
+
+## Why Native Java?
+- **APK Size**: ~20KB vs 20MB+ (Python/Kivy).
+- **RAM Usage**: ~5MB vs 100MB+ (Python/Kivy).
+- **Stability**: Uses official Android APIs directly, reducing the risk of background process termination.
