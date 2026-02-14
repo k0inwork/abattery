@@ -7,4 +7,30 @@
     <string name="current_battery">Current Battery: %1$d%%</string>
     <string name="service_active">Battery Monitor Active</string>
     <string name="service_monitoring">Monitoring battery below %1$d%%</string>
+
+    <string name="alert_normal">Подключите зарядное устройство</string>
+    <string name="alert_urgent">Подключите зарядное устройство, очень быстро</string>
+    <string name="alert_critical">Критический уровень заряда, немедленно подключите зарядное устройство</string>
+
+    <string name="volume_label">Volume: %1$d%%</string>
+
+    <string name="urgent_offset_label">Urgent Offset: -%1$d%%</string>
+    <string name="critical_offset_label">Critical Offset: -%1$d%%</string>
+
+    <string name="settings_section_thresholds">Threshold Settings</string>
+    <string name="settings_section_volume">Sound Settings</string>
+    <string name="settings_section_alerts">Alert Phrases &amp; Audio</string>
+    <string name="settings_section_custom_tts">Advanced Voice Settings (AI/LLM)</string>
+
+    <string name="normal_alert_hint">Normal alert phrase</string>
+    <string name="urgent_alert_hint">Urgent alert phrase</string>
+    <string name="critical_alert_hint">Critical alert phrase</string>
+
+    <string name="select_audio_file">Select Audio File</string>
+    <string name="clear_audio_file">Clear Audio (use TTS)</string>
+    <string name="audio_selected">Audio: %1$s</string>
+    <string name="no_audio_selected">No audio selected (using TTS)</string>
+
+    <string name="custom_tts_url_hint">Custom TTS URL (optional)</string>
+    <string name="custom_tts_url_info">Use %s as placeholder for text. Leave empty to use system TTS.</string>
 </resources>
