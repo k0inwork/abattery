@@ -43,3 +43,4 @@ If you prefer to build locally:
 - **Stability**: Uses official Android APIs directly, reducing the risk of background process termination.
 
 yes
+no
