@@ -19,6 +19,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import com.google.android.material.button.MaterialButton;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -26,11 +27,15 @@ public class MainActivity extends AppCompatActivity {
     private TextView thresholdText;
     private SeekBar volumeSeekBar;
     private TextView volumeText;
+    private SeekBar urgentOffsetSeekBar;
+    private TextView urgentOffsetLabel;
+    private SeekBar criticalOffsetSeekBar;
+    private TextView criticalOffsetLabel;
     private EditText alertNormalEdit;
     private EditText alertUrgentEdit;
     private EditText alertCriticalEdit;
     private TextView batteryLevelText;
-    private Button startStopButton;
+    private MaterialButton startStopButton;
     private boolean isServiceRunning = false;
 
     private final BroadcastReceiver batteryInfoReceiver = new BroadcastReceiver() {
@@ -54,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
         thresholdText = findViewById(R.id.thresholdText);
         volumeSeekBar = findViewById(R.id.volumeSeekBar);
         volumeText = findViewById(R.id.volumeText);
+        urgentOffsetSeekBar = findViewById(R.id.urgentOffsetSeekBar);
+        urgentOffsetLabel = findViewById(R.id.urgentOffsetLabel);
+        criticalOffsetSeekBar = findViewById(R.id.criticalOffsetSeekBar);
+        criticalOffsetLabel = findViewById(R.id.criticalOffsetLabel);
         alertNormalEdit = findViewById(R.id.alertNormalEdit);
         alertUrgentEdit = findViewById(R.id.alertUrgentEdit);
         alertCriticalEdit = findViewById(R.id.alertCriticalEdit);
@@ -65,6 +74,8 @@ public class MainActivity extends AppCompatActivity {
         isServiceRunning = prefs.getBoolean(BatteryService.KEY_RUNNING, false);
         int savedThreshold = prefs.getInt(BatteryService.KEY_THRESHOLD, 20);
         int savedVolume = prefs.getInt(BatteryService.KEY_VOLUME, 100);
+        int savedUrgentOffset = prefs.getInt("urgent_offset", 5);
+        int savedCriticalOffset = prefs.getInt("critical_offset", 10);
         String savedNormal = prefs.getString("alert_normal_text", getString(R.string.alert_normal));
         String savedUrgent = prefs.getString("alert_urgent_text", getString(R.string.alert_urgent));
         String savedCritical = prefs.getString("alert_critical_text", getString(R.string.alert_critical));
@@ -74,6 +85,12 @@ public class MainActivity extends AppCompatActivity {
 
         volumeSeekBar.setProgress(savedVolume);
         volumeText.setText(getString(R.string.volume_label, savedVolume));
+
+        urgentOffsetSeekBar.setProgress(savedUrgentOffset);
+        urgentOffsetLabel.setText(getString(R.string.urgent_offset_label, savedUrgentOffset));
+
+        criticalOffsetSeekBar.setProgress(savedCriticalOffset);
+        criticalOffsetLabel.setText(getString(R.string.critical_offset_label, savedCriticalOffset));
 
         alertNormalEdit.setText(savedNormal);
         alertUrgentEdit.setText(savedUrgent);
@@ -89,12 +106,8 @@ public class MainActivity extends AppCompatActivity {
                     updateService();
                 }
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -105,21 +118,37 @@ public class MainActivity extends AppCompatActivity {
                     updateService();
                 }
             }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
+        urgentOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                urgentOffsetLabel.setText(getString(R.string.urgent_offset_label, progress));
+                if (isServiceRunning && fromUser) {
+                    updateService();
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
 
+        criticalOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                criticalOffsetLabel.setText(getString(R.string.critical_offset_label, progress));
+                if (isServiceRunning && fromUser) {
+                    updateService();
+                }
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
         TextWatcher textWatcher = new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
             @Override
             public void afterTextChanged(Editable s) {
                 if (isServiceRunning) {
@@ -134,7 +163,6 @@ public class MainActivity extends AppCompatActivity {
 
         startStopButton.setOnClickListener(v -> toggleService());
 
-        // Request notification permission for Android 13+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -148,8 +176,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         registerReceiver(batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
-
-        // Refresh service running state
         SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
         isServiceRunning = prefs.getBoolean(BatteryService.KEY_RUNNING, false);
         updateButtonText();
@@ -159,17 +185,17 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(batteryInfoReceiver);
-
-        // Save alert texts when leaving
-        saveAlertTexts();
+        saveAlertTextsAndOffsets();
     }
 
-    private void saveAlertTexts() {
+    private void saveAlertTextsAndOffsets() {
         SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
         prefs.edit()
             .putString("alert_normal_text", alertNormalEdit.getText().toString())
             .putString("alert_urgent_text", alertUrgentEdit.getText().toString())
             .putString("alert_critical_text", alertCriticalEdit.getText().toString())
+            .putInt("urgent_offset", urgentOffsetSeekBar.getProgress())
+            .putInt("critical_offset", criticalOffsetSeekBar.getProgress())
             .apply();
     }
 
@@ -182,10 +208,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateService() {
-        saveAlertTexts();
+        saveAlertTextsAndOffsets();
         Intent serviceIntent = new Intent(this, BatteryService.class);
         serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());
         serviceIntent.putExtra("volume", volumeSeekBar.getProgress());
+        serviceIntent.putExtra("urgent_offset", urgentOffsetSeekBar.getProgress());
+        serviceIntent.putExtra("critical_offset", criticalOffsetSeekBar.getProgress());
         serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
         serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
         serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
@@ -198,11 +226,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleService() {
-        Intent serviceIntent = new Intent(this, BatteryService.class);
         if (!isServiceRunning) {
             updateService();
             isServiceRunning = true;
         } else {
+            Intent serviceIntent = new Intent(this, BatteryService.class);
             stopService(serviceIntent);
             isServiceRunning = false;
         }

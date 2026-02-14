@@ -13,4 +13,15 @@
     <string name="alert_critical">Критический уровень заряда, немедленно подключите зарядное устройство</string>
 
     <string name="volume_label">Volume: %1$d%%</string>
+
+    <string name="urgent_offset_label">Urgent Offset: -%1$d%%</string>
+    <string name="critical_offset_label">Critical Offset: -%1$d%%</string>
+
+    <string name="settings_section_thresholds">Threshold Settings</string>
+    <string name="settings_section_volume">Sound Settings</string>
+    <string name="settings_section_alerts">Alert Phrases</string>
+
+    <string name="normal_alert_hint">Normal alert phrase</string>
+    <string name="urgent_alert_hint">Urgent alert phrase</string>
+    <string name="critical_alert_hint">Critical alert phrase</string>
 </resources>

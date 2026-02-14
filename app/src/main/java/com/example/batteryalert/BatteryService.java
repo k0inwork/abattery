@@ -24,11 +24,15 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     public static final String KEY_RUNNING = "isServiceRunning";
     public static final String KEY_THRESHOLD = "threshold";
     public static final String KEY_VOLUME = "volume";
+    public static final String KEY_URGENT_OFFSET = "urgent_offset";
+    public static final String KEY_CRITICAL_OFFSET = "critical_offset";
     public static final String KEY_ALERT_NORMAL = "alert_normal_text";
     public static final String KEY_ALERT_URGENT = "alert_urgent_text";
     public static final String KEY_ALERT_CRITICAL = "alert_critical_text";
 
     private int threshold = 20;
+    private int urgentOffset = 5;
+    private int criticalOffset = 10;
     private float volume = 1.0f;
     private String alertNormal;
     private String alertUrgent;
@@ -73,15 +77,15 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         createNotificationChannel();
 
-        // Load settings from SharedPreferences
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         threshold = prefs.getInt(KEY_THRESHOLD, 20);
+        urgentOffset = prefs.getInt(KEY_URGENT_OFFSET, 5);
+        criticalOffset = prefs.getInt(KEY_CRITICAL_OFFSET, 10);
         volume = prefs.getInt(KEY_VOLUME, 100) / 100f;
         alertNormal = prefs.getString(KEY_ALERT_NORMAL, getString(R.string.alert_normal));
         alertUrgent = prefs.getString(KEY_ALERT_URGENT, getString(R.string.alert_urgent));
         alertCritical = prefs.getString(KEY_ALERT_CRITICAL, getString(R.string.alert_critical));
 
-        // Mark as running
         prefs.edit().putBoolean(KEY_RUNNING, true).apply();
     }
 
@@ -107,6 +111,14 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
                 int volInt = intent.getIntExtra("volume", 100);
                 volume = volInt / 100f;
                 prefs.edit().putInt(KEY_VOLUME, volInt).apply();
+            }
+            if (intent.hasExtra("urgent_offset")) {
+                urgentOffset = intent.getIntExtra("urgent_offset", 5);
+                prefs.edit().putInt(KEY_URGENT_OFFSET, urgentOffset).apply();
+            }
+            if (intent.hasExtra("critical_offset")) {
+                criticalOffset = intent.getIntExtra("critical_offset", 10);
+                prefs.edit().putInt(KEY_CRITICAL_OFFSET, criticalOffset).apply();
             }
             if (intent.hasExtra("alert_normal")) {
                 alertNormal = intent.getStringExtra("alert_normal");
@@ -142,8 +154,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
             tts.stop();
             tts.shutdown();
         }
-
-        // Mark as stopped
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         prefs.edit().putBoolean(KEY_RUNNING, false).apply();
     }
@@ -156,9 +166,9 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     private void playAlertSound(float batteryPct) {
         if (tts != null && ttsInitialized) {
             String textToSpeak;
-            if (batteryPct <= threshold - 10) {
+            if (batteryPct <= threshold - criticalOffset) {
                 textToSpeak = alertCritical;
-            } else if (batteryPct <= threshold - 5) {
+            } else if (batteryPct <= threshold - urgentOffset) {
                 textToSpeak = alertUrgent;
             } else {
                 textToSpeak = alertNormal;

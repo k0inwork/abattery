@@ -1,99 +1,216 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#F5F5F5">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center_horizontal">
+        android:padding="16dp">
 
         <TextView
             android:id="@+id/batteryLevelText"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Battery Monitor"
-            android:textSize="24sp"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:textColor="@android:color/black"
+            android:layout_marginTop="16dp"
             android:layout_marginBottom="24dp" />
 
-        <TextView
-            android:id="@+id/thresholdText"
-            android:layout_width="wrap_content"
+        <!-- Threshold Settings Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Alert Threshold: 20%"
-            android:textSize="18sp" />
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
 
-        <SeekBar
-            android:id="@+id/thresholdSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="20"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-        <TextView
-            android:id="@+id/volumeText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Volume: 100%"
-            android:textSize="18sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_section_thresholds"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/design_default_color_primary"
+                    android:layout_marginBottom="12dp" />
 
-        <SeekBar
-            android:id="@+id/volumeSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="100"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp" />
+                <TextView
+                    android:id="@+id/thresholdText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Alert Threshold: 20%"
+                    android:textSize="16sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Normal Alert Text (threshold)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertNormalEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Normal alert text"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
+                <SeekBar
+                    android:id="@+id/thresholdSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:progress="20"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Urgent Alert Text (threshold - 5%)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertUrgentEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Urgent alert text"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
+                <TextView
+                    android:id="@+id/urgentOffsetLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Urgent Offset: -5%"
+                    android:textSize="16sp" />
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Critical Alert Text (threshold - 10%)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertCriticalEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Critical alert text"
-            android:inputType="text"
-            android:layout_marginBottom="24dp" />
+                <SeekBar
+                    android:id="@+id/urgentOffsetSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="50"
+                    android:progress="5"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp" />
 
-        <Button
+                <TextView
+                    android:id="@+id/criticalOffsetLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Critical Offset: -10%"
+                    android:textSize="16sp" />
+
+                <SeekBar
+                    android:id="@+id/criticalOffsetSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="50"
+                    android:progress="10"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Sound Settings Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_section_volume"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/design_default_color_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <TextView
+                    android:id="@+id/volumeText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Volume: 100%"
+                    android:textSize="16sp" />
+
+                <SeekBar
+                    android:id="@+id/volumeSeekBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:max="100"
+                    android:progress="100"
+                    android:layout_marginTop="8dp" />
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Alert Phrases Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_section_alerts"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/design_default_color_primary"
+                    android:layout_marginBottom="12dp" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/normal_alert_hint"
+                    android:layout_marginBottom="12dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/alertNormalEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/urgent_alert_hint"
+                    android:layout_marginBottom="12dp"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/alertUrgentEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="@string/critical_alert_hint"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/alertCriticalEdit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="text" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/startStopButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Start Monitoring" />
+            android:layout_height="64dp"
+            android:text="Start Monitoring"
+            android:textSize="18sp"
+            app:cornerRadius="32dp" />
 
     </LinearLayout>
 </ScrollView>
