@@ -10,7 +10,10 @@ import android.content.pm.PackageManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -21,6 +24,11 @@ public class MainActivity extends AppCompatActivity {
 
     private SeekBar thresholdSeekBar;
     private TextView thresholdText;
+    private SeekBar volumeSeekBar;
+    private TextView volumeText;
+    private EditText alertNormalEdit;
+    private EditText alertUrgentEdit;
+    private EditText alertCriticalEdit;
     private TextView batteryLevelText;
     private Button startStopButton;
     private boolean isServiceRunning = false;
@@ -44,6 +52,11 @@ public class MainActivity extends AppCompatActivity {
 
         thresholdSeekBar = findViewById(R.id.thresholdSeekBar);
         thresholdText = findViewById(R.id.thresholdText);
+        volumeSeekBar = findViewById(R.id.volumeSeekBar);
+        volumeText = findViewById(R.id.volumeText);
+        alertNormalEdit = findViewById(R.id.alertNormalEdit);
+        alertUrgentEdit = findViewById(R.id.alertUrgentEdit);
+        alertCriticalEdit = findViewById(R.id.alertCriticalEdit);
         batteryLevelText = findViewById(R.id.batteryLevelText);
         startStopButton = findViewById(R.id.startStopButton);
 
@@ -51,15 +64,30 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
         isServiceRunning = prefs.getBoolean(BatteryService.KEY_RUNNING, false);
         int savedThreshold = prefs.getInt(BatteryService.KEY_THRESHOLD, 20);
+        int savedVolume = prefs.getInt(BatteryService.KEY_VOLUME, 100);
+        String savedNormal = prefs.getString("alert_normal_text", getString(R.string.alert_normal));
+        String savedUrgent = prefs.getString("alert_urgent_text", getString(R.string.alert_urgent));
+        String savedCritical = prefs.getString("alert_critical_text", getString(R.string.alert_critical));
 
         thresholdSeekBar.setProgress(savedThreshold);
         thresholdText.setText(getString(R.string.alert_threshold, savedThreshold));
+
+        volumeSeekBar.setProgress(savedVolume);
+        volumeText.setText(getString(R.string.volume_label, savedVolume));
+
+        alertNormalEdit.setText(savedNormal);
+        alertUrgentEdit.setText(savedUrgent);
+        alertCriticalEdit.setText(savedCritical);
+
         updateButtonText();
 
         thresholdSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 thresholdText.setText(getString(R.string.alert_threshold, progress));
+                if (isServiceRunning && fromUser) {
+                    updateService();
+                }
             }
 
             @Override
@@ -68,6 +96,41 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onStopTrackingTouch(SeekBar seekBar) {}
         });
+
+        volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                volumeText.setText(getString(R.string.volume_label, progress));
+                if (isServiceRunning && fromUser) {
+                    updateService();
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        TextWatcher textWatcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isServiceRunning) {
+                    updateService();
+                }
+            }
+        };
+
+        alertNormalEdit.addTextChangedListener(textWatcher);
+        alertUrgentEdit.addTextChangedListener(textWatcher);
+        alertCriticalEdit.addTextChangedListener(textWatcher);
 
         startStopButton.setOnClickListener(v -> toggleService());
 
@@ -85,12 +148,29 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         registerReceiver(batteryInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+
+        // Refresh service running state
+        SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
+        isServiceRunning = prefs.getBoolean(BatteryService.KEY_RUNNING, false);
+        updateButtonText();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(batteryInfoReceiver);
+
+        // Save alert texts when leaving
+        saveAlertTexts();
+    }
+
+    private void saveAlertTexts() {
+        SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
+        prefs.edit()
+            .putString("alert_normal_text", alertNormalEdit.getText().toString())
+            .putString("alert_urgent_text", alertUrgentEdit.getText().toString())
+            .putString("alert_critical_text", alertCriticalEdit.getText().toString())
+            .apply();
     }
 
     private void updateButtonText() {
@@ -101,21 +181,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void updateService() {
+        saveAlertTexts();
+        Intent serviceIntent = new Intent(this, BatteryService.class);
+        serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());
+        serviceIntent.putExtra("volume", volumeSeekBar.getProgress());
+        serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
+        serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
+        serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
+        } else {
+            startService(serviceIntent);
+        }
+    }
+
     private void toggleService() {
         Intent serviceIntent = new Intent(this, BatteryService.class);
         if (!isServiceRunning) {
-            int progress = thresholdSeekBar.getProgress();
-            serviceIntent.putExtra("threshold", progress);
-
-            // Save it now
-            SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
-            prefs.edit().putInt(BatteryService.KEY_THRESHOLD, progress).apply();
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(serviceIntent);
-            } else {
-                startService(serviceIntent);
-            }
+            updateService();
             isServiceRunning = true;
         } else {
             stopService(serviceIntent);

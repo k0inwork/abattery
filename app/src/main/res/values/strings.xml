@@ -7,4 +7,10 @@
     <string name="current_battery">Current Battery: %1$d%%</string>
     <string name="service_active">Battery Monitor Active</string>
     <string name="service_monitoring">Monitoring battery below %1$d%%</string>
+
+    <string name="alert_normal">Подключите зарядное устройство</string>
+    <string name="alert_urgent">Подключите зарядное устройство, очень быстро</string>
+    <string name="alert_critical">Критический уровень заряда, немедленно подключите зарядное устройство</string>
+
+    <string name="volume_label">Volume: %1$d%%</string>
 </resources>

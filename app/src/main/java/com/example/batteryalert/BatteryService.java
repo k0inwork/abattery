@@ -9,22 +9,32 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
 import android.os.BatteryManager;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.speech.tts.TextToSpeech;
 import androidx.core.app.NotificationCompat;
+import java.util.Locale;
 
-public class BatteryService extends Service {
+public class BatteryService extends Service implements TextToSpeech.OnInitListener {
 
     private static final String CHANNEL_ID = "BatteryMonitorChannel";
     public static final String PREFS_NAME = "BatteryPrefs";
     public static final String KEY_RUNNING = "isServiceRunning";
     public static final String KEY_THRESHOLD = "threshold";
+    public static final String KEY_VOLUME = "volume";
+    public static final String KEY_ALERT_NORMAL = "alert_normal_text";
+    public static final String KEY_ALERT_URGENT = "alert_urgent_text";
+    public static final String KEY_ALERT_CRITICAL = "alert_critical_text";
 
     private int threshold = 20;
-    private ToneGenerator toneGenerator;
+    private float volume = 1.0f;
+    private String alertNormal;
+    private String alertUrgent;
+    private String alertCritical;
+    private TextToSpeech tts;
+    private boolean ttsInitialized = false;
     private long lastAlertTime = 0;
     private static final long ALERT_COOLDOWN = 60000; // 1 minute cooldown
 
@@ -38,12 +48,17 @@ public class BatteryService extends Service {
             boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                                  status == BatteryManager.BATTERY_STATUS_FULL;
 
+            if (isCharging) {
+                stopAlertSound();
+                return;
+            }
+
             if (level != -1 && scale != -1) {
                 float batteryPct = level * 100 / (float) scale;
-                if (batteryPct < threshold && !isCharging) {
+                if (batteryPct <= threshold) {
                     long currentTime = System.currentTimeMillis();
                     if (currentTime - lastAlertTime > ALERT_COOLDOWN) {
-                        playAlertSound();
+                        playAlertSound(batteryPct);
                         lastAlertTime = currentTime;
                     }
                 }
@@ -54,25 +69,57 @@ public class BatteryService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
+        tts = new TextToSpeech(this, this);
         registerReceiver(batteryReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         createNotificationChannel();
 
-        // Load threshold from SharedPreferences
+        // Load settings from SharedPreferences
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         threshold = prefs.getInt(KEY_THRESHOLD, 20);
+        volume = prefs.getInt(KEY_VOLUME, 100) / 100f;
+        alertNormal = prefs.getString(KEY_ALERT_NORMAL, getString(R.string.alert_normal));
+        alertUrgent = prefs.getString(KEY_ALERT_URGENT, getString(R.string.alert_urgent));
+        alertCritical = prefs.getString(KEY_ALERT_CRITICAL, getString(R.string.alert_critical));
 
         // Mark as running
         prefs.edit().putBoolean(KEY_RUNNING, true).apply();
     }
 
     @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(new Locale("ru"));
+            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                ttsInitialized = true;
+            }
+        }
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && intent.hasExtra("threshold")) {
-            threshold = intent.getIntExtra("threshold", 20);
-            // Save it for persistence across restarts
-            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-            prefs.edit().putInt(KEY_THRESHOLD, threshold).apply();
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        if (intent != null) {
+            if (intent.hasExtra("threshold")) {
+                threshold = intent.getIntExtra("threshold", 20);
+                prefs.edit().putInt(KEY_THRESHOLD, threshold).apply();
+            }
+            if (intent.hasExtra("volume")) {
+                int volInt = intent.getIntExtra("volume", 100);
+                volume = volInt / 100f;
+                prefs.edit().putInt(KEY_VOLUME, volInt).apply();
+            }
+            if (intent.hasExtra("alert_normal")) {
+                alertNormal = intent.getStringExtra("alert_normal");
+                prefs.edit().putString(KEY_ALERT_NORMAL, alertNormal).apply();
+            }
+            if (intent.hasExtra("alert_urgent")) {
+                alertUrgent = intent.getStringExtra("alert_urgent");
+                prefs.edit().putString(KEY_ALERT_URGENT, alertUrgent).apply();
+            }
+            if (intent.hasExtra("alert_critical")) {
+                alertCritical = intent.getStringExtra("alert_critical");
+                prefs.edit().putString(KEY_ALERT_CRITICAL, alertCritical).apply();
+            }
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -91,8 +138,9 @@ public class BatteryService extends Service {
     public void onDestroy() {
         super.onDestroy();
         unregisterReceiver(batteryReceiver);
-        if (toneGenerator != null) {
-            toneGenerator.release();
+        if (tts != null) {
+            tts.stop();
+            tts.shutdown();
         }
 
         // Mark as stopped
@@ -105,9 +153,30 @@ public class BatteryService extends Service {
         return null;
     }
 
-    private void playAlertSound() {
-        if (toneGenerator != null) {
-            toneGenerator.startTone(ToneGenerator.TONE_CDMA_PIP, 500);
+    private void playAlertSound(float batteryPct) {
+        if (tts != null && ttsInitialized) {
+            String textToSpeak;
+            if (batteryPct <= threshold - 10) {
+                textToSpeak = alertCritical;
+            } else if (batteryPct <= threshold - 5) {
+                textToSpeak = alertUrgent;
+            } else {
+                textToSpeak = alertNormal;
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                Bundle params = new Bundle();
+                params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
+                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
+            } else {
+                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
+            }
+        }
+    }
+
+    private void stopAlertSound() {
+        if (tts != null) {
+            tts.stop();
         }
     }
 
