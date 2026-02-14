@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
             int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
             if (level != -1 && scale != -1) {
                 int batteryPct = (int) (level * 100 / (float) scale);
-                batteryLevelText.setText("Current Battery: " + batteryPct + "%");
+                batteryLevelText.setText(getString(R.string.current_battery, batteryPct));
             }
         }
     };
@@ -53,13 +53,13 @@ public class MainActivity extends AppCompatActivity {
         int savedThreshold = prefs.getInt(BatteryService.KEY_THRESHOLD, 20);
 
         thresholdSeekBar.setProgress(savedThreshold);
-        thresholdText.setText("Alert Threshold: " + savedThreshold + "%");
+        thresholdText.setText(getString(R.string.alert_threshold, savedThreshold));
         updateButtonText();
 
         thresholdSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                thresholdText.setText("Alert Threshold: " + progress + "%");
+                thresholdText.setText(getString(R.string.alert_threshold, progress));
             }
 
             @Override
@@ -95,9 +95,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateButtonText() {
         if (isServiceRunning) {
-            startStopButton.setText("Stop Monitoring");
+            startStopButton.setText(R.string.stop_monitoring);
         } else {
-            startStopButton.setText("Start Monitoring");
+            startStopButton.setText(R.string.start_monitoring);
         }
     }
 

@@ -76,8 +76,8 @@ public class BatteryService extends Service {
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Battery Monitor Active")
-                .setContentText("Monitoring battery below " + threshold + "%")
+                .setContentTitle(getString(R.string.service_active))
+                .setContentText(getString(R.string.service_monitoring, threshold))
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setOngoing(true)
                 .build();
