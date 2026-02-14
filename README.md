@@ -41,3 +41,6 @@ If you prefer to build locally:
 - **APK Size**: ~20KB vs 20MB+ (Python/Kivy).
 - **RAM Usage**: ~5MB vs 100MB+ (Python/Kivy).
 - **Stability**: Uses official Android APIs directly, reducing the risk of background process termination.
+
+yes
+no
