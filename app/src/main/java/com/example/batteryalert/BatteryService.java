@@ -9,12 +9,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.speech.tts.TextToSpeech;
 import androidx.core.app.NotificationCompat;
+import java.net.URLEncoder;
 import java.util.Locale;
 
 public class BatteryService extends Service implements TextToSpeech.OnInitListener {
@@ -34,13 +38,16 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     private int urgentOffset = 5;
     private int criticalOffset = 10;
     private float volume = 1.0f;
-    private String alertNormal;
-    private String alertUrgent;
-    private String alertCritical;
+    private String alertNormal, alertUrgent, alertCritical;
+    private String uriNormal, uriUrgent, uriCritical;
+    private String customTtsUrl;
+
     private TextToSpeech tts;
     private boolean ttsInitialized = false;
+    private MediaPlayer mediaPlayer;
+
     private long lastAlertTime = 0;
-    private static final long ALERT_COOLDOWN = 60000; // 1 minute cooldown
+    private static final long ALERT_COOLDOWN = 60000;
 
     private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
         @Override
@@ -78,6 +85,12 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         createNotificationChannel();
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        loadSettings(prefs);
+
+        prefs.edit().putBoolean(KEY_RUNNING, true).apply();
+    }
+
+    private void loadSettings(SharedPreferences prefs) {
         threshold = prefs.getInt(KEY_THRESHOLD, 20);
         urgentOffset = prefs.getInt(KEY_URGENT_OFFSET, 5);
         criticalOffset = prefs.getInt(KEY_CRITICAL_OFFSET, 10);
@@ -85,8 +98,10 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         alertNormal = prefs.getString(KEY_ALERT_NORMAL, getString(R.string.alert_normal));
         alertUrgent = prefs.getString(KEY_ALERT_URGENT, getString(R.string.alert_urgent));
         alertCritical = prefs.getString(KEY_ALERT_CRITICAL, getString(R.string.alert_critical));
-
-        prefs.edit().putBoolean(KEY_RUNNING, true).apply();
+        customTtsUrl = prefs.getString("custom_tts_url", "");
+        uriNormal = prefs.getString("uri_normal", null);
+        uriUrgent = prefs.getString("uri_urgent", null);
+        uriCritical = prefs.getString("uri_critical", null);
     }
 
     @Override
@@ -101,37 +116,55 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         if (intent != null) {
+            SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
             if (intent.hasExtra("threshold")) {
                 threshold = intent.getIntExtra("threshold", 20);
-                prefs.edit().putInt(KEY_THRESHOLD, threshold).apply();
+                editor.putInt(KEY_THRESHOLD, threshold);
             }
             if (intent.hasExtra("volume")) {
                 int volInt = intent.getIntExtra("volume", 100);
                 volume = volInt / 100f;
-                prefs.edit().putInt(KEY_VOLUME, volInt).apply();
+                editor.putInt(KEY_VOLUME, volInt);
             }
             if (intent.hasExtra("urgent_offset")) {
                 urgentOffset = intent.getIntExtra("urgent_offset", 5);
-                prefs.edit().putInt(KEY_URGENT_OFFSET, urgentOffset).apply();
+                editor.putInt(KEY_URGENT_OFFSET, urgentOffset);
             }
             if (intent.hasExtra("critical_offset")) {
                 criticalOffset = intent.getIntExtra("critical_offset", 10);
-                prefs.edit().putInt(KEY_CRITICAL_OFFSET, criticalOffset).apply();
+                editor.putInt(KEY_CRITICAL_OFFSET, criticalOffset);
             }
             if (intent.hasExtra("alert_normal")) {
                 alertNormal = intent.getStringExtra("alert_normal");
-                prefs.edit().putString(KEY_ALERT_NORMAL, alertNormal).apply();
+                editor.putString(KEY_ALERT_NORMAL, alertNormal);
             }
             if (intent.hasExtra("alert_urgent")) {
                 alertUrgent = intent.getStringExtra("alert_urgent");
-                prefs.edit().putString(KEY_ALERT_URGENT, alertUrgent).apply();
+                editor.putString(KEY_ALERT_URGENT, alertUrgent);
             }
             if (intent.hasExtra("alert_critical")) {
                 alertCritical = intent.getStringExtra("alert_critical");
-                prefs.edit().putString(KEY_ALERT_CRITICAL, alertCritical).apply();
+                editor.putString(KEY_ALERT_CRITICAL, alertCritical);
             }
+            if (intent.hasExtra("custom_tts_url")) {
+                customTtsUrl = intent.getStringExtra("custom_tts_url");
+                editor.putString("custom_tts_url", customTtsUrl);
+            }
+            if (intent.hasExtra("uri_normal")) {
+                uriNormal = intent.getStringExtra("uri_normal");
+                editor.putString("uri_normal", uriNormal);
+            }
+            if (intent.hasExtra("uri_urgent")) {
+                uriUrgent = intent.getStringExtra("uri_urgent");
+                editor.putString("uri_urgent", uriUrgent);
+            }
+            if (intent.hasExtra("uri_critical")) {
+                uriCritical = intent.getStringExtra("uri_critical");
+                editor.putString("uri_critical", uriCritical);
+            }
+            editor.apply();
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -142,7 +175,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
                 .build();
 
         startForeground(1, notification);
-
         return START_STICKY;
     }
 
@@ -154,6 +186,10 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
             tts.stop();
             tts.shutdown();
         }
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         prefs.edit().putBoolean(KEY_RUNNING, false).apply();
     }
@@ -164,29 +200,83 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     }
 
     private void playAlertSound(float batteryPct) {
-        if (tts != null && ttsInitialized) {
-            String textToSpeak;
-            if (batteryPct <= threshold - criticalOffset) {
-                textToSpeak = alertCritical;
-            } else if (batteryPct <= threshold - urgentOffset) {
-                textToSpeak = alertUrgent;
-            } else {
-                textToSpeak = alertNormal;
-            }
+        String alertUriString = null;
+        String textToSpeak = null;
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                Bundle params = new Bundle();
-                params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
-                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
+        if (batteryPct <= threshold - criticalOffset) {
+            alertUriString = uriCritical;
+            textToSpeak = alertCritical;
+        } else if (batteryPct <= threshold - urgentOffset) {
+            alertUriString = uriUrgent;
+            textToSpeak = alertUrgent;
+        } else {
+            alertUriString = uriNormal;
+            textToSpeak = alertNormal;
+        }
+
+        if (alertUriString != null) {
+            playAudioUri(Uri.parse(alertUriString));
+        } else if (textToSpeak != null) {
+            if (customTtsUrl != null && !customTtsUrl.trim().isEmpty() && customTtsUrl.contains("%s")) {
+                try {
+                    String encodedText = URLEncoder.encode(textToSpeak, "UTF-8");
+                    String finalUrl = customTtsUrl.replace("%s", encodedText);
+                    playAudioUri(Uri.parse(finalUrl));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    fallbackToTts(textToSpeak);
+                }
             } else {
-                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
+                fallbackToTts(textToSpeak);
             }
+        }
+    }
+
+    private void fallbackToTts(String text) {
+        if (tts != null && ttsInitialized) {
+            speakTts(text);
+        }
+    }
+
+    private void playAudioUri(Uri uri) {
+        try {
+            if (mediaPlayer != null) {
+                mediaPlayer.release();
+            }
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(this, uri);
+            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
+            mediaPlayer.setVolume(volume, volume);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
+                // If network audio fails, we could fallback to TTS here too
+                return false;
+            });
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void speakTts(String text) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Bundle params = new Bundle();
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
+        } else {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
         }
     }
 
     private void stopAlertSound() {
         if (tts != null) {
             tts.stop();
+        }
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            mediaPlayer.stop();
         }
     }
 
