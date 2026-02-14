@@ -22,7 +22,7 @@ To avoid the hassle of setting up a local Android build environment (SDK, NDK, G
 Push this project to a GitHub repository.
 
 ### 2. Automatic Build
-Every push to the `main` branch triggers a build. Go to the **Actions** tab in your GitHub repository to see the progress.
+Every push to the repository triggers a build. Go to the **Actions** tab in your GitHub repository to see the progress.
 
 ### 3. Download APK
 Once the build is complete:
