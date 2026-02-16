@@ -128,10 +128,6 @@ public class MainActivity extends AppCompatActivity {
         uriUrgent = prefs.getString("uri_urgent", null);
         uriCritical = prefs.getString("uri_critical", null);
 
-        uriNormal = prefs.getString("uri_normal", null);
-        uriUrgent = prefs.getString("uri_urgent", null);
-        uriCritical = prefs.getString("uri_critical", null);
-
         thresholdSeekBar.setProgress(savedThreshold);
         thresholdText.setText(getString(R.string.alert_threshold, savedThreshold));
 
@@ -147,8 +143,6 @@ public class MainActivity extends AppCompatActivity {
         alertNormalEdit.setText(savedNormal);
         alertUrgentEdit.setText(savedUrgent);
         alertCriticalEdit.setText(savedCritical);
-
-        updateAudioLabels();
 
         updateAudioLabels();
 
@@ -209,37 +203,9 @@ public class MainActivity extends AppCompatActivity {
 //            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         };
 
-        urgentOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                urgentOffsetLabel.setText(getString(R.string.urgent_offset_label, progress));
-                if (isServiceRunning && fromUser) updateService();
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-
-        criticalOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                criticalOffsetLabel.setText(getString(R.string.critical_offset_label, progress));
-                if (isServiceRunning && fromUser) updateService();
-            }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-
         alertNormalEdit.addTextChangedListener(textWatcher);
         alertUrgentEdit.addTextChangedListener(textWatcher);
         alertCriticalEdit.addTextChangedListener(textWatcher);
-
-        btnSelectAudioNormal.setOnClickListener(v -> pickAudioNormal.launch(new String[]{"audio/*"}));
-        btnSelectAudioUrgent.setOnClickListener(v -> pickAudioUrgent.launch(new String[]{"audio/*"}));
-        btnSelectAudioCritical.setOnClickListener(v -> pickAudioCritical.launch(new String[]{"audio/*"}));
-
-        btnClearAudioNormal.setOnClickListener(v -> { uriNormal = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
-        btnClearAudioUrgent.setOnClickListener(v -> { uriUrgent = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
-        btnClearAudioCritical.setOnClickListener(v -> { uriCritical = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
 
         btnSelectAudioNormal.setOnClickListener(v -> pickAudioNormal.launch(new String[]{"audio/*"}));
         btnSelectAudioUrgent.setOnClickListener(v -> pickAudioUrgent.launch(new String[]{"audio/*"}));
@@ -279,10 +245,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(batteryInfoReceiver);
-        saveSettings();
-    }
-
-    private void saveAlertTexts() {
         saveSettings();
     }
 
@@ -339,23 +301,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleService() {
-        saveSettings();
-        Intent serviceIntent = new Intent(this, BatteryService.class);
-        serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());
-        serviceIntent.putExtra("volume", volumeSeekBar.getProgress());
-        serviceIntent.putExtra("urgent_offset", urgentOffsetSeekBar.getProgress());
-        serviceIntent.putExtra("critical_offset", criticalOffsetSeekBar.getProgress());
-        serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
-        serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
-        serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
-        serviceIntent.putExtra("uri_normal", uriNormal);
-        serviceIntent.putExtra("uri_urgent", uriUrgent);
-        serviceIntent.putExtra("uri_critical", uriCritical);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
+        if (isServiceRunning) {
+            stopService(new Intent(this, BatteryService.class));
+            isServiceRunning = false;
         } else {
-            startService(serviceIntent);
+            updateService();
+            isServiceRunning = true;
         }
+        updateButtonText();
     }
 }
