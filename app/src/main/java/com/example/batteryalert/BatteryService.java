@@ -102,15 +102,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         uriCritical = prefs.getString("uri_critical", null);
     }
 
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(new Locale("ru"));
-            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                ttsInitialized = true;
-            }
-        }
-    }
 
     @Override
     public void onInit(int status) {
@@ -204,25 +195,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     }
 
     private void playAlertSound(float batteryPct) {
-        String alertUriString = null;
-        String textToSpeak = null;
-
-        if (batteryPct <= threshold - criticalOffset) {
-            alertUriString = uriCritical;
-            textToSpeak = alertCritical;
-        } else if (batteryPct <= threshold - urgentOffset) {
-            alertUriString = uriUrgent;
-            textToSpeak = alertUrgent;
-        } else {
-            alertUriString = uriNormal;
-            textToSpeak = alertNormal;
-        }
-
-        if (alertUriString != null) {
-            playAudioUri(Uri.parse(alertUriString));
-        } else if (textToSpeak != null) {
-             fallbackToTts(textToSpeak); 
-        }
 
         String alertUriString = null;
         String textToSpeak = null;
@@ -280,38 +252,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         }
     }
 
-    private void playAudioUri(Uri uri) {
-        try {
-            if (mediaPlayer != null) {
-                mediaPlayer.release();
-            }
-            mediaPlayer = new MediaPlayer();
-            mediaPlayer.setDataSource(this, uri);
-            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build());
-            mediaPlayer.setVolume(volume, volume);
-            mediaPlayer.prepareAsync();
-            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
-            mediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                // If network audio fails, we could fallback to TTS here too
-                return false;
-            });
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void speakTts(String text) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Bundle params = new Bundle();
-            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
-        } else {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
-        }
-    }
 
     private void stopAlertSound() {
         if (tts != null) {

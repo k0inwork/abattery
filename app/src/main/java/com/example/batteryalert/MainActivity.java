@@ -35,7 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private TextView urgentOffsetLabel;
     private SeekBar criticalOffsetSeekBar;
     private TextView criticalOffsetLabel;
-    private SeekBar urgentOffsetSeekBar;
+    private EditText alertNormalEdit;
+    private EditText alertUrgentEdit;
+    private EditText alertCriticalEdit;
     private TextView audioNormalPath, audioUrgentPath, audioCriticalPath;
     private Button btnSelectAudioUrgent, btnClearAudioUrgent;
     private Button btnSelectAudioCritical, btnClearAudioCritical;
