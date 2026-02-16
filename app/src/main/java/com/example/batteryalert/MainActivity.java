@@ -35,15 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private TextView urgentOffsetLabel;
     private SeekBar criticalOffsetSeekBar;
     private TextView criticalOffsetLabel;
-    private EditText alertNormalEdit;
-    private EditText alertUrgentEdit;
-    private EditText alertCriticalEdit;
     private SeekBar urgentOffsetSeekBar;
-    private TextView urgentOffsetLabel;
-    private SeekBar criticalOffsetSeekBar;
-    private TextView criticalOffsetLabel;
     private TextView audioNormalPath, audioUrgentPath, audioCriticalPath;
-    private Button btnSelectAudioNormal, btnClearAudioNormal;
     private Button btnSelectAudioUrgent, btnClearAudioUrgent;
     private Button btnSelectAudioCritical, btnClearAudioCritical;
     private TextView batteryLevelText;

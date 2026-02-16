@@ -221,15 +221,9 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         if (alertUriString != null) {
             playAudioUri(Uri.parse(alertUriString));
         } else if (textToSpeak != null) {
-            if (customTtsUrl != null && !customTtsUrl.trim().isEmpty() && customTtsUrl.contains("%s")) {
-                try {
-                    String encodedText = URLEncoder.encode(textToSpeak, "UTF-8");
-                    String finalUrl = customTtsUrl.replace("%s", encodedText);
-                    playAudioUri(Uri.parse(finalUrl));
-                } catch (Exception e) { e.printStackTrace(); fallbackToTts(textToSpeak); }
-
-            } else { fallbackToTts(textToSpeak); }
+             fallbackToTts(textToSpeak); 
         }
+
         String alertUriString = null;
         String textToSpeak = null;
 
