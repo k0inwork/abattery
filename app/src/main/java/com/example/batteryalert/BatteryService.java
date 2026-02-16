@@ -195,19 +195,26 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     }
 
     private void playAlertSound(float batteryPct) {
-
         String alertUriString = null;
         String textToSpeak = null;
 
-        if (batteryPct <= threshold - criticalOffset) {
-            alertUriString = uriCritical;
-            textToSpeak = alertCritical;
-        } else if (batteryPct <= threshold - urgentOffset) {
-            alertUriString = uriUrgent;
-            textToSpeak = alertUrgent;
-        } else {
-            alertUriString = uriNormal;
-            textToSpeak = alertNormal;
+        BatteryLogic.AlertLevel level = BatteryLogic.getAlertLevel(batteryPct, threshold, urgentOffset, criticalOffset);
+
+        switch (level) {
+            case CRITICAL:
+                alertUriString = uriCritical;
+                textToSpeak = alertCritical;
+                break;
+            case URGENT:
+                alertUriString = uriUrgent;
+                textToSpeak = alertUrgent;
+                break;
+            case NORMAL:
+                alertUriString = uriNormal;
+                textToSpeak = alertNormal;
+                break;
+            default:
+                return;
         }
 
         if (alertUriString != null) {
@@ -245,13 +252,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
             e.printStackTrace();
         }
     }
-
-    private void fallbackToTts(String text) {
-        if (tts != null && ttsInitialized) {
-            speakTts(text);
-        }
-    }
-
 
     private void stopAlertSound() {
         if (tts != null) {
