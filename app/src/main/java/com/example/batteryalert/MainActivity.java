@@ -38,7 +38,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText alertNormalEdit;
     private EditText alertUrgentEdit;
     private EditText alertCriticalEdit;
-    private EditText customTtsUrlEdit;
+    private SeekBar urgentOffsetSeekBar;
+    private TextView urgentOffsetLabel;
+    private SeekBar criticalOffsetSeekBar;
+    private TextView criticalOffsetLabel;
     private TextView audioNormalPath, audioUrgentPath, audioCriticalPath;
     private Button btnSelectAudioNormal, btnClearAudioNormal;
     private Button btnSelectAudioUrgent, btnClearAudioUrgent;
@@ -101,7 +104,6 @@ public class MainActivity extends AppCompatActivity {
         alertNormalEdit = findViewById(R.id.alertNormalEdit);
         alertUrgentEdit = findViewById(R.id.alertUrgentEdit);
         alertCriticalEdit = findViewById(R.id.alertCriticalEdit);
-        customTtsUrlEdit = findViewById(R.id.customTtsUrlEdit);
         audioNormalPath = findViewById(R.id.audioNormalPath);
         audioUrgentPath = findViewById(R.id.audioUrgentPath);
         audioCriticalPath = findViewById(R.id.audioCriticalPath);
@@ -130,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
         uriUrgent = prefs.getString("uri_urgent", null);
         uriCritical = prefs.getString("uri_critical", null);
 
+        uriNormal = prefs.getString("uri_normal", null);
+        uriUrgent = prefs.getString("uri_urgent", null);
+        uriCritical = prefs.getString("uri_critical", null);
+
         thresholdSeekBar.setProgress(savedThreshold);
         thresholdText.setText(getString(R.string.alert_threshold, savedThreshold));
 
@@ -146,6 +152,8 @@ public class MainActivity extends AppCompatActivity {
         alertUrgentEdit.setText(savedUrgent);
         alertCriticalEdit.setText(savedCritical);
         customTtsUrlEdit.setText(savedCustomTtsUrl);
+
+        updateAudioLabels();
 
         updateAudioLabels();
 
@@ -192,17 +200,54 @@ public class MainActivity extends AppCompatActivity {
         });
 
         TextWatcher textWatcher = new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {}
-            @Override public void afterTextChanged(Editable s) {
-                if (isServiceRunning) updateService();
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                if (isServiceRunning) { updateService(); }
             }
-        };
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        urgentOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                urgentOffsetLabel.setText(getString(R.string.urgent_offset_label, progress));
+                if (isServiceRunning && fromUser) updateService();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        criticalOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                criticalOffsetLabel.setText(getString(R.string.critical_offset_label, progress));
+                if (isServiceRunning && fromUser) updateService();
+            }
+            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+        });
+
+        TextWatcher textWatcher = new TextWatcher() {
 
         alertNormalEdit.addTextChangedListener(textWatcher);
         alertUrgentEdit.addTextChangedListener(textWatcher);
         alertCriticalEdit.addTextChangedListener(textWatcher);
         customTtsUrlEdit.addTextChangedListener(textWatcher);
+
+        btnSelectAudioNormal.setOnClickListener(v -> pickAudioNormal.launch(new String[]{"audio/*"}));
+        btnSelectAudioUrgent.setOnClickListener(v -> pickAudioUrgent.launch(new String[]{"audio/*"}));
+        btnSelectAudioCritical.setOnClickListener(v -> pickAudioCritical.launch(new String[]{"audio/*"}));
+
+        btnClearAudioNormal.setOnClickListener(v -> { uriNormal = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
+        btnClearAudioUrgent.setOnClickListener(v -> { uriUrgent = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
+        btnClearAudioCritical.setOnClickListener(v -> { uriCritical = null; updateAudioLabels(); saveAudioUris(); if (isServiceRunning) updateService(); });
 
         btnSelectAudioNormal.setOnClickListener(v -> pickAudioNormal.launch(new String[]{"audio/*"}));
         btnSelectAudioUrgent.setOnClickListener(v -> pickAudioUrgent.launch(new String[]{"audio/*"}));
@@ -245,13 +290,16 @@ public class MainActivity extends AppCompatActivity {
         saveSettings();
     }
 
+    private void saveAlertTexts() {
+        saveSettings();
+    }
+
     private void saveSettings() {
         SharedPreferences prefs = getSharedPreferences(BatteryService.PREFS_NAME, MODE_PRIVATE);
         prefs.edit()
             .putString("alert_normal_text", alertNormalEdit.getText().toString())
             .putString("alert_urgent_text", alertUrgentEdit.getText().toString())
             .putString("alert_critical_text", alertCriticalEdit.getText().toString())
-            .putString("custom_tts_url", customTtsUrlEdit.getText().toString())
             .putInt("urgent_offset", urgentOffsetSeekBar.getProgress())
             .putInt("critical_offset", criticalOffsetSeekBar.getProgress())
             .putString("uri_normal", uriNormal)
@@ -300,14 +348,23 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleService() {
-        if (!isServiceRunning) {
-            updateService();
-            isServiceRunning = true;
+        saveSettings();
+        Intent serviceIntent = new Intent(this, BatteryService.class);
+        serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());
+        serviceIntent.putExtra("volume", volumeSeekBar.getProgress());
+        serviceIntent.putExtra("urgent_offset", urgentOffsetSeekBar.getProgress());
+        serviceIntent.putExtra("critical_offset", criticalOffsetSeekBar.getProgress());
+        serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
+        serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
+        serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
+        serviceIntent.putExtra("uri_normal", uriNormal);
+        serviceIntent.putExtra("uri_urgent", uriUrgent);
+        serviceIntent.putExtra("uri_critical", uriCritical);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(serviceIntent);
         } else {
-            Intent serviceIntent = new Intent(this, BatteryService.class);
-            stopService(serviceIntent);
-            isServiceRunning = false;
+            startService(serviceIntent);
         }
-        updateButtonText();
     }
 }

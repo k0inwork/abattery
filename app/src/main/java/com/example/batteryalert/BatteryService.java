@@ -38,9 +38,13 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     private int urgentOffset = 5;
     private int criticalOffset = 10;
     private float volume = 1.0f;
+    private TextToSpeech tts;
+    private boolean ttsInitialized = false;
+    private int urgentOffset = 5;
+    private int criticalOffset = 10;
+    private float volume = 1.0f;
     private String alertNormal, alertUrgent, alertCritical;
     private String uriNormal, uriUrgent, uriCritical;
-    private String customTtsUrl;
 
     private TextToSpeech tts;
     private boolean ttsInitialized = false;
@@ -98,10 +102,19 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         alertNormal = prefs.getString(KEY_ALERT_NORMAL, getString(R.string.alert_normal));
         alertUrgent = prefs.getString(KEY_ALERT_URGENT, getString(R.string.alert_urgent));
         alertCritical = prefs.getString(KEY_ALERT_CRITICAL, getString(R.string.alert_critical));
-        customTtsUrl = prefs.getString("custom_tts_url", "");
         uriNormal = prefs.getString("uri_normal", null);
         uriUrgent = prefs.getString("uri_urgent", null);
         uriCritical = prefs.getString("uri_critical", null);
+    }
+
+    @Override
+    public void onInit(int status) {
+        if (status == TextToSpeech.SUCCESS) {
+            int result = tts.setLanguage(new Locale("ru"));
+            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
+                ttsInitialized = true;
+            }
+        }
     }
 
     @Override
@@ -147,10 +160,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
             if (intent.hasExtra("alert_critical")) {
                 alertCritical = intent.getStringExtra("alert_critical");
                 editor.putString(KEY_ALERT_CRITICAL, alertCritical);
-            }
-            if (intent.hasExtra("custom_tts_url")) {
-                customTtsUrl = intent.getStringExtra("custom_tts_url");
-                editor.putString("custom_tts_url", customTtsUrl);
             }
             if (intent.hasExtra("uri_normal")) {
                 uriNormal = intent.getStringExtra("uri_normal");
@@ -229,6 +238,53 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
             } else {
                 fallbackToTts(textToSpeak);
             }
+        String alertUriString = null;
+        String textToSpeak = null;
+
+        if (batteryPct <= threshold - criticalOffset) {
+            alertUriString = uriCritical;
+            textToSpeak = alertCritical;
+        } else if (batteryPct <= threshold - urgentOffset) {
+            alertUriString = uriUrgent;
+            textToSpeak = alertUrgent;
+        } else {
+            alertUriString = uriNormal;
+            textToSpeak = alertNormal;
+        }
+
+        if (alertUriString != null) {
+            playAudioUri(Uri.parse(alertUriString));
+        } else if (textToSpeak != null && tts != null && ttsInitialized) {
+            speakTts(textToSpeak);
+        }
+    }
+
+    private void speakTts(String text) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Bundle params = new Bundle();
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
+        } else {
+            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+        }
+    }
+
+    private void playAudioUri(Uri uri) {
+        try {
+            if (mediaPlayer != null) {
+                mediaPlayer.release();
+            }
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.setDataSource(this, uri);
+            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build());
+            mediaPlayer.setVolume(volume, volume);
+            mediaPlayer.prepareAsync();
+            mediaPlayer.setOnPreparedListener(MediaPlayer::start);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
