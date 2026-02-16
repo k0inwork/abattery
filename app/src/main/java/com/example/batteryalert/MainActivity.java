@@ -327,7 +327,6 @@ public class MainActivity extends AppCompatActivity {
         serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
         serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
         serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
-        serviceIntent.putExtra("custom_tts_url", customTtsUrlEdit.getText().toString());
         serviceIntent.putExtra("uri_normal", uriNormal);
         serviceIntent.putExtra("uri_urgent", uriUrgent);
         serviceIntent.putExtra("uri_critical", uriCritical);
