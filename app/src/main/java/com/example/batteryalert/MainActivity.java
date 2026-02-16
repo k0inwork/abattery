@@ -147,7 +147,6 @@ public class MainActivity extends AppCompatActivity {
         alertNormalEdit.setText(savedNormal);
         alertUrgentEdit.setText(savedUrgent);
         alertCriticalEdit.setText(savedCritical);
-        customTtsUrlEdit.setText(savedCustomTtsUrl);
 
         updateAudioLabels();
 
@@ -206,8 +205,8 @@ public class MainActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {
                 if (isServiceRunning) { updateService(); }
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+//            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
+//            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         };
 
         urgentOffsetSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -233,7 +232,6 @@ public class MainActivity extends AppCompatActivity {
         alertNormalEdit.addTextChangedListener(textWatcher);
         alertUrgentEdit.addTextChangedListener(textWatcher);
         alertCriticalEdit.addTextChangedListener(textWatcher);
-        customTtsUrlEdit.addTextChangedListener(textWatcher);
 
         btnSelectAudioNormal.setOnClickListener(v -> pickAudioNormal.launch(new String[]{"audio/*"}));
         btnSelectAudioUrgent.setOnClickListener(v -> pickAudioUrgent.launch(new String[]{"audio/*"}));
