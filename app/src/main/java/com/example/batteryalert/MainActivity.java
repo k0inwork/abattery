@@ -31,13 +31,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView thresholdText;
     private SeekBar volumeSeekBar;
     private TextView volumeText;
-    private EditText alertNormalEdit;
-    private EditText alertUrgentEdit;
-    private EditText alertCriticalEdit;
     private SeekBar urgentOffsetSeekBar;
     private TextView urgentOffsetLabel;
     private SeekBar criticalOffsetSeekBar;
     private TextView criticalOffsetLabel;
+    private EditText alertNormalEdit;
+    private EditText alertUrgentEdit;
+    private EditText alertCriticalEdit;
     private TextView audioNormalPath, audioUrgentPath, audioCriticalPath;
     private Button btnSelectAudioNormal, btnClearAudioNormal;
     private Button btnSelectAudioUrgent, btnClearAudioUrgent;
@@ -161,30 +161,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 volumeText.setText(getString(R.string.volume_label, progress));
-                if (isServiceRunning && fromUser) {
-                    updateService();
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {}
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {}
-        });
-
-        TextWatcher textWatcher = new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (isServiceRunning) {
-                    updateService();
-                }
                 if (isServiceRunning && fromUser) updateService();
             }
             @Override public void onStartTrackingTouch(SeekBar seekBar) {}
@@ -261,12 +237,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         unregisterReceiver(batteryInfoReceiver);
-
-        // Save alert texts when leaving
-        saveAlertTexts();
-    }
-
-    private void saveAlertTexts() {
         saveSettings();
     }
 
@@ -302,22 +272,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateService() {
-        saveAlertTexts();
-        Intent serviceIntent = new Intent(this, BatteryService.class);
-        serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());
-        serviceIntent.putExtra("volume", volumeSeekBar.getProgress());
-        serviceIntent.putExtra("alert_normal", alertNormalEdit.getText().toString());
-        serviceIntent.putExtra("alert_urgent", alertUrgentEdit.getText().toString());
-        serviceIntent.putExtra("alert_critical", alertCriticalEdit.getText().toString());
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent);
-        } else {
-            startService(serviceIntent);
-        }
-    }
-
-    private void toggleService() {
         saveSettings();
         Intent serviceIntent = new Intent(this, BatteryService.class);
         serviceIntent.putExtra("threshold", thresholdSeekBar.getProgress());

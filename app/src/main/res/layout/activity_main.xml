@@ -1,101 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:background="#F5F5F5">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:gravity="center_horizontal">
-
-        <TextView
-            android:id="@+id/batteryLevelText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Battery Monitor"
-            android:textSize="24sp"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:id="@+id/thresholdText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Alert Threshold: 20%"
-            android:textSize="18sp" />
-
-        <SeekBar
-            android:id="@+id/thresholdSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="20"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/volumeText"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Volume: 100%"
-            android:textSize="18sp" />
-
-        <SeekBar
-            android:id="@+id/volumeSeekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:max="100"
-            android:progress="100"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Normal Alert Text (threshold)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertNormalEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Normal alert text"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Urgent Alert Text (threshold - 5%)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertUrgentEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Urgent alert text"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Critical Alert Text (threshold - 10%)"
-            android:textSize="14sp" />
-        <EditText
-            android:id="@+id/alertCriticalEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Critical alert text"
-            android:inputType="text"
-            android:layout_marginBottom="24dp" />
-
-        <Button
-            android:id="@+id/startStopButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Start Monitoring" />
         android:padding="16dp">
 
         <TextView
@@ -391,7 +304,6 @@
             android:text="Start Monitoring"
             android:textSize="18sp"
             app:cornerRadius="32dp" />
->>>>>>> refs/remotes/origin/feature/configurable-russian-tts-alerts-4132015612650118380
 
     </LinearLayout>
 </ScrollView>

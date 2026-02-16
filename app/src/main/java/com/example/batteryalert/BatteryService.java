@@ -34,9 +34,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     public static final String KEY_ALERT_CRITICAL = "alert_critical_text";
 
     private int threshold = 20;
-    private float volume = 1.0f;
-    private TextToSpeech tts;
-    private boolean ttsInitialized = false;
     private int urgentOffset = 5;
     private int criticalOffset = 10;
     private float volume = 1.0f;
@@ -102,16 +99,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
         uriNormal = prefs.getString("uri_normal", null);
         uriUrgent = prefs.getString("uri_urgent", null);
         uriCritical = prefs.getString("uri_critical", null);
-    }
-
-    @Override
-    public void onInit(int status) {
-        if (status == TextToSpeech.SUCCESS) {
-            int result = tts.setLanguage(new Locale("ru"));
-            if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                ttsInitialized = true;
-            }
-        }
     }
 
     @Override
@@ -206,23 +193,6 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     }
 
     private void playAlertSound(float batteryPct) {
-        if (tts != null && ttsInitialized) {
-            String textToSpeak;
-            if (batteryPct <= threshold - 10) {
-                textToSpeak = alertCritical;
-            } else if (batteryPct <= threshold - 5) {
-                textToSpeak = alertUrgent;
-            } else {
-                textToSpeak = alertNormal;
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                Bundle params = new Bundle();
-                params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume);
-                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, "battery_alert");
-            } else {
-                tts.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, null);
-            }
         String alertUriString = null;
         String textToSpeak = null;
 
