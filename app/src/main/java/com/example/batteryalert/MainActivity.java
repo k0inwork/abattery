@@ -234,8 +234,6 @@ public class MainActivity extends AppCompatActivity {
             @Override public void onStopTrackingTouch(SeekBar seekBar) {}
         });
 
-        TextWatcher textWatcher = new TextWatcher() {
-
         alertNormalEdit.addTextChangedListener(textWatcher);
         alertUrgentEdit.addTextChangedListener(textWatcher);
         alertCriticalEdit.addTextChangedListener(textWatcher);
