@@ -40,14 +40,9 @@ public class BatteryService extends Service implements TextToSpeech.OnInitListen
     private float volume = 1.0f;
     private TextToSpeech tts;
     private boolean ttsInitialized = false;
-    private int urgentOffset = 5;
-    private int criticalOffset = 10;
-    private float volume = 1.0f;
     private String alertNormal, alertUrgent, alertCritical;
     private String uriNormal, uriUrgent, uriCritical;
 
-    private TextToSpeech tts;
-    private boolean ttsInitialized = false;
     private MediaPlayer mediaPlayer;
 
     private long lastAlertTime = 0;
